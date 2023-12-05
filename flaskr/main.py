@@ -54,6 +54,7 @@ def getMoviesByGenres(user_genres):
     results = []
 
     # ====  Do some operations ====
+
     if len(user_genres) > 0:
         genres_mask = genres['id'].isin([int(id) for id in user_genres])
         user_genres = [1 if has is True else 0 for has in genres_mask]
@@ -80,7 +81,6 @@ def getRecommendationBy(user_rates):
         results = movies[20:30]
 
     # ==== End ====
-
 
     # return the result
     if len(results) > 0:
@@ -115,9 +115,7 @@ def getLikedSimilarBy(user_likes):
 
     # ==== End ====
 
-
     # return the result
     if len(results) > 0:
         return results.to_dict('records')
     return results
-
