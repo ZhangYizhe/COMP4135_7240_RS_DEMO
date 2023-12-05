@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Movie Recommender System</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+</head>
+<body>
+<div id="app">
+    <template v-if="isLoading">
+        <section class="hero is-fullheight">
+            <div class="hero-body">
+                <div class="">
+                    <p class="title">
+                        Loading...
+                    </p>
+                </div>
+            </div>
+        </section>
+    </template>
+    <template v-else>
+        <div class="container">
+            <nav :class="['navbar', 'is-active']" role="navigation" aria-label="main navigation">
+                <div class="navbar-brand">
+                    <a class="navbar-item" href="/">
+                        <span class="is-size-3">Movies Recommender System</span>
+                    </a>
+
+                    <a role="button" :class="['navbar-burger', isActivityNavBar ? 'is-active' : '']" aria-label="menu"
+                       aria-expanded="false"
+                       data-target="navbarBasicExample" @click="isActivityNavBar = !isActivityNavBar">
+                        <span aria-hidden="true"></span>
+                        <span aria-hidden="true"></span>
+                        <span aria-hidden="true"></span>
+                    </a>
+                </div>
+
+                <div id="navbarBasicExample" :class="['navbar-menu', isActivityNavBar ? 'is-active' : '']">
+                    <div class="navbar-start">
+                    </div>
+                    <div class="navbar-end">
+                        <div class="navbar-item">
+                            <div class="buttons">
+                                <button class="button is-danger" @click="cleanAll">
+                                    <strong>Clan All</strong>
+                                </button>
+
+                                <button class="button is-link" @click="showGenres = true">
+                                    <strong>Genres</strong>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </nav>
+        </div>
+
+        <template v-if="genres.length > 0 && userRates.length > 0">
+            {% if recommendations %}
+            <section class="section pt-2 pb-0">
+                <div class="container">
+                    <p class="is-size-4 mb-3">
+                        Recommended
+                    </p>
+
+                    <div class="columns is-mobile is-multiline">
+                        {% for movie in recommendations %}
+                        <div class="column is-2-fullhd is-2-desktop is-2-tablet is-6-mobile">
+                            <div class="card">
+                                <div class="card-image">
+                                    <figure class="image is-3by4">
+                                        <img src="{{ movie['cover_url'] }}"
+                                             onerror="this.src='https://placehold.co/480x640?text=No+Cover';"
+                                             alt="">
+                                    </figure>
+                                </div>
+                                <div class="card-content p-2">
+                                    <div class="media">
+                                        <div class="media-content">
+                                            <p style="font-size: 0.8rem; font-weight: bold">{{ movie['movie_title']
+                                                }}</p>
+                                            <p style="font-size: 0.8rem">{{ movie['release_date'] }}</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="card-footer p-2">
+                                    <button class="button is-small" @click="updateLike({{movie['movie_id']}})">
+                                        <span :class="['fa fa-heart', inLikes({{movie['movie_id']}}) ? 'checked': '']" > Like</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </section>
+            {% endif %}
+
+            {% if likes_similars %}
+            <section class="section pb-0">
+                <div class="container">
+                    <p class="is-size-4 mb-3">
+                        Liked with Similar Items
+                    </p>
+
+                    <div class="columns is-mobile is-multiline">
+                        {% for movie in likes_similars %}
+                        <div class="column is-2-fullhd is-2-desktop is-2-tablet is-6-mobile">
+                            <div class="card">
+                                <div class="card-image">
+                                    <figure class="image is-3by4">
+                                        <img src="{{ movie['cover_url'] }}"
+                                             onerror="this.src='https://placehold.co/480x640?text=No+Cover';"
+                                             alt="">
+                                    </figure>
+                                </div>
+                                <div class="card-content p-2">
+                                    <div class="media">
+                                        <div class="media-content">
+                                            <p style="font-size: 0.8rem; font-weight: bold">{{ movie['movie_title']
+                                                }}</p>
+                                            <p style="font-size: 0.8rem">{{ movie['release_date'] }}</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="card-footer p-2">
+                                    <button class="button is-small" @click="updateLike({{movie['movie_id']}})">
+                                        <span :class="['fa fa-heart', inLikes({{movie['movie_id']}}) ? 'checked': '']" > Like</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </section>
+            {% endif %}
+
+            {% if likes %}
+            <section class="section pb-0">
+                <div class="container">
+                    <p class="is-size-4 mb-3">
+                        Liked <button class="button" @click="reloadPage"><i class="fa fa-refresh mr-3" aria-hidden="true"></i>Refresh</button>
+                    </p>
+
+                    <div class="columns is-mobile pb-3" style="overflow: scroll">
+                        {% for movie in likes %}
+                        <div class="column is-2-fullhd is-2-desktop is-2-tablet is-6-mobile">
+                            <div class="card">
+                                <div class="card-image">
+                                    <figure class="image is-3by4">
+                                        <img src="{{ movie['cover_url'] }}"
+                                             onerror="this.src='https://placehold.co/480x640?text=No+Cover';"
+                                             alt="">
+                                    </figure>
+                                </div>
+                                <div class="card-content p-2">
+                                    <div class="media">
+                                        <div class="media-content">
+                                            <p style="font-size: 0.8rem; font-weight: bold">{{ movie['movie_title']
+                                                }}</p>
+                                            <p style="font-size: 0.8rem">{{ movie['release_date'] }}</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="card-footer p-2">
+                                    <button class="button is-small" @click="updateLike({{movie['movie_id']}})">
+                                        <span :class="['fa fa-heart', inLikes({{movie['movie_id']}}) ? 'checked': '']" > Like</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </section>
+            {% endif %}
+        </template>
+
+        <div :class="['modal', showGenres ? 'is-active' : '']">
+            <div class="modal-background"></div>
+            <div class="modal-card">
+                <header class="modal-card-head">
+                    <p class="modal-card-title">Please choose any genre you're interested in.</p>
+                </header>
+                <div class="modal-card-body">
+                    <p class="mb-3">Multiple answers are possible.</p>
+                    {% for gener in genres %}
+                    <button :class="['button m-2', inGenres({{gener['id']}}) ? 'is-link' : '' ]" value="{{gener['id']}}"
+                            @click="updateGenre({{gener['id']}})">
+                        {{gener['name']}}
+                    </button>
+                    {% endfor %}
+                </div>
+                <footer class="modal-card-foot">
+                    <button class="button is-link" :disabled="genres.length == 0" @click="saveGenres">Save
+                    </button>
+                </footer>
+            </div>
+        </div>
+
+        <div :class="['modal', showMovieRate ? 'is-active' : '']">
+            <div class="modal-background"></div>
+            <div class="modal-card" style="max-width: 1000px">
+                <header class="modal-card-head">
+                    <p class="modal-card-title">Please rate the following movies.</p>
+                </header>
+                <div class="modal-card-body">
+                    <div class="columns is-mobile is-multiline">
+                        {% for movie in default_genres_movies %}
+                        <div class="column is-3-fullhd is-3-desktop is-3-tablet is-6-mobile">
+                            <div class="card">
+                                <div class="card-image">
+                                    <figure class="image is-3by4">
+                                        <img src="{{ movie['cover_url'] }}"
+                                             onerror="this.src='https://placehold.co/480x640?text=No+Cover';" alt="">
+                                    </figure>
+                                </div>
+                                <div class="card-content p-2">
+                                    <div class="media">
+                                        <div class="media-content">
+                                            <p style="font-size: 0.8rem; font-weight: bold">{{ movie['movie_title']
+                                                }}</p>
+                                            <p style="font-size: 0.8rem">{{ movie['release_date'] }}</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="card-footer p-2">
+                                    <template v-for="rate in [1, 2, 3, 4, 5]">
+                                        <span :class="['fa fa-star px-1 star', getRate({{movie['movie_id']}})[1] >= rate ? 'checked': '']"
+                                              @click="updateRate({{movie['movie_id']}}, rate)"></span>
+                                    </template>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                <footer class="modal-card-foot">
+                    <button class="button is-link" :disabled="userRates.length == 0"
+                            @click="showMovieRate = false; reloadPage()">Save
+                    </button>
+                </footer>
+            </div>
+        </div>
+
+        <footer class="footer mt-6">
+            <div class="container is-max-widescreen">
+                <div class="content has-text-centered">
+                    <p>
+                        Copyright © 2023 <a href="https://hci.comp.hkbu.edu.hk" target="_blank"><strong>PI Lab</strong></a>. All Rights Reserved.
+                    </p>
+                    <a href="https://www.comp.hkbu.edu.hk" target="_blank"><img src="https://pilab-hkbu.github.io/assets/comp-logo-0b38dcd2.png"
+                                                                                alt="logo"
+                                                                                style="height: 30px; margin-right: 20px"></a>
+                    <a href="https://hkbu.edu.hk" target="_blank"><img src="https://pilab-hkbu.github.io/assets/bu-logo-9d19dadd.png" alt="logo"
+                                                                       style="height: 30px;"></a>
+
+                </div>
+            </div>
+        </footer>
+    </template>
+</div>
+
+<script type="module">
+    import {createApp, onMounted, ref} from 'https://unpkg.com/vue@3/dist/vue.esm-browser.js'
+
+    let app = createApp({
+        setup() {
+            const isLoading = ref(true)
+            const isActivityNavBar = ref(false)
+
+            // ==== Vue default operations ====
+            onMounted(() => {
+                isLoading.value = false
+
+                showGenres.value = genres.value.length === 0
+                showMovieRate.value = (genres.value.length > 0 && userRates.value.length === 0)
+            })
+
+            function cleanAll() {
+                if (confirm("Are you sure to delete all records?")) {
+                    document.cookie = "user_genres=; Max-Age=0";
+                    document.cookie = "user_rates=; Max-Age=0";
+                    document.cookie = "user_likes=; Max-Age=0";
+                    reloadPage()
+                }
+            }
+
+            // ==== Genre Operation ====
+            const showGenres = ref(false)
+            const genres = ref({{user_genres | tojson}}) // If this place shows error, please check the format: ref({{user_genres | tojson}})
+
+            function updateGenre(_id) {
+                let id = _id.toString()
+                const index = genres.value.indexOf(id);
+                if (index > -1) {
+                    genres.value.splice(index, 1);
+                } else {
+                    genres.value.push(id);
+                    genres.value = genres.value.sort(function (a, b) {
+                        return a - b;
+                    });
+                }
+            }
+
+            function inGenres(id) {
+                return genres.value.includes(id.toString())
+            }
+
+            function saveGenres() {
+                document.cookie = "user_genres=" + genres.value;
+                document.cookie = "user_rates=; Max-Age=0";
+                reloadPage()
+            }
+
+            // ==== Movie Rate Operation ====
+            const showMovieRate = ref(false)
+            const userRates = ref({{user_rates | tojson}}) // If this place shows error, please check the format: ref({{user_rates | tojson}})
+
+            function getRate(movie_id) {
+                for (let index in userRates.value) {
+                    let record = userRates.value[index].split('|')
+                    if (parseInt(record[1]) === movie_id) {
+                        return [index, record[2]]
+                    }
+                }
+
+                return [-1, -1]
+            }
+
+            function updateRate(movie_id, rate) {
+                let record = '944' + '|' + movie_id + '|' + rate + '|' + '0' //  total 943 users, so the new user id is 944
+
+                const index = getRate(movie_id)[0];
+                if (index > -1) {
+                    userRates.value[index] = record;
+                } else {
+                    userRates.value.push(record);
+                }
+                document.cookie = "user_rates=" + userRates.value;
+            }
+
+            // ==== Movie Like Operation ====
+            const userLikes = ref({{user_likes | tojson}}) // If this place shows error, please check the format: ref({{user_likes | tojson}})
+
+            function updateLike(_movie_id) {
+                let movie_id = _movie_id.toString()
+                const index = userLikes.value.indexOf(movie_id);
+                if (index > -1) {
+                    userLikes.value.splice(index, 1);
+                } else {
+                    userLikes.value.push(movie_id);
+                }
+
+                document.cookie = "user_likes=" + userLikes.value;
+
+                reloadPage();
+            }
+            function inLikes(movie_id) {
+                return userLikes.value.includes(movie_id.toString())
+            }
+
+
+            function reloadPage() {
+                location.reload();
+            }
+
+            return {
+                isLoading,
+                isActivityNavBar,
+                cleanAll,
+
+                showGenres,
+                genres,
+                updateGenre,
+                inGenres,
+                saveGenres,
+
+                showMovieRate,
+                userRates,
+                getRate,
+                updateRate,
+
+                userLikes,
+                updateLike,
+                inLikes,
+
+                reloadPage,
+            }
+        }
+    })
+
+    // Reset the Vue delimiters and Mount it
+    app.config.compilerOptions.delimiters = ['[[', ']]']
+    app.mount('#app')
+
+</script>
+<style>
+    .modal-content, .modal-card {
+        width: calc(100% - 4em);
+
+        @media screen and (min-width: 1022px) {
+            width: 1022px;
+        }
+    }
+
+    .card {
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .card-footer {
+        margin-top: auto;
+    }
+
+    .checked {
+        color: orange;
+    }
+
+    .star {
+        cursor: pointer;
+    }
+</style>
+</body>
+</html>
