@@ -61,7 +61,7 @@ def getMoviesByGenres(user_genres):
         user_genres_df.index = genres['name']
         movies_genres = movies.iloc[:, 5:]
         mask = (movies_genres.dot(user_genres_df) > 0).squeeze()
-        results = movies.loc[mask][:10]
+        results = movies.loc[mask][:30]
 
     # ==== End ====
 
