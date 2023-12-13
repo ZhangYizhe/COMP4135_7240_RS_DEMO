@@ -84,6 +84,11 @@ def getUserLikesBy(user_likes):
         mask = movies['movie_id'].isin([int(movie_id) for movie_id in user_likes])
         results = movies.loc[mask]
 
+    original_orders = pd.DataFrame()
+    for id in user_likes:
+        original_orders = pd.concat([results.loc[[int(id) - 1]], original_orders])
+    results = original_orders
+
     # return the result
     if len(results) > 0:
         return results.to_dict('records')
