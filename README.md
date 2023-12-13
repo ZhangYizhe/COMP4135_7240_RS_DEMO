@@ -1,13 +1,13 @@
 # COMP4135_7240_RS_DEMO
 COMP4135 &amp; 7240 Recommender System Demo
 
-## Create an environment
+## Create an environment (only for Mac and Linux)
 
 ```
 python3 -m venv .venv
 ```
 
-## Activate the environment
+## Activate the environment (only for Mac and Linux)
 
 ```
 . .venv/bin/activate
