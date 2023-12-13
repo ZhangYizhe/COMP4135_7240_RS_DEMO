@@ -2,12 +2,17 @@ from flask import (
     Blueprint, render_template, request
 )
 import pandas as pd
-
 from .tools.data_tool import *
+
+from surprise import Reader
+from surprise import KNNBasic
+from surprise import Dataset
 
 bp = Blueprint('main', __name__, url_prefix='/')
 
 movies, genres, rates, users = loadData()
+
+algo = KNNBasic(sim_options={'name': 'pearson', 'user_based': False})
 
 
 @bp.route('/', methods=('GET', 'POST'))
@@ -72,50 +77,92 @@ def getMoviesByGenres(user_genres):
     return results
 
 
-def getRecommendationBy(user_rates):
-    results = []
-
-    # ====  Do some operations ====
-
-    if len(user_rates) > 0:
-        results = movies[20:30]
-
-    # ==== End ====
-
-    # return the result
-    if len(results) > 0:
-        return results.to_dict('records')
-    return results
-
-
 def getUserLikesBy(user_likes):
     results = []
-
-    # ====  Do some operations ====
 
     if len(user_likes) > 0:
         mask = movies['movie_id'].isin([int(movie_id) for movie_id in user_likes])
         results = movies.loc[mask]
 
-    # ==== End ====
-
     # return the result
     if len(results) > 0:
         return results.to_dict('records')
     return results
 
-
-def getLikedSimilarBy(user_likes):
+# Modify this function
+def getRecommendationBy(user_rates):
     results = []
 
-    # ====  Do some operations ====
+    # ==== Do some operations ====
 
-    if len(user_likes) > 0:
-        results = movies[40:50]
+    # Convert user_rates to rates from the user
+    user_rates = ratesFromUser(user_rates)
+
+    # Combine rates and user_rates into training_rates
+    training_rates = pd.concat([rates, user_rates])
+
+    # Check if there are any user_rates
+    if len(user_rates) > 0:
+        # Initialize a reader with rating scale from 1 to 5
+        reader = Reader(rating_scale=(1, 5))
+
+        # Load the training data from the training_rates DataFrame
+        training_data = Dataset.load_from_df(training_rates, reader=reader)
+
+        # Build a full training set from the training data
+        trainset = training_data.build_full_trainset()
+
+        # Fit the algorithm using the trainset
+        algo.fit(trainset)
+
+        # Generate predictions using the testset from the trainset (limited to the first 100)
+        predictions = algo.test(trainset.build_testset()[:100])
+
+        # Sort the predictions based on the 'est' values in descending order
+        sorted_predictions = sorted(predictions, key=lambda x: x.est, reverse=True)
+
+        # Specify the number of top-K predictions to retrieve
+        top_K = 12
+
+        # Extract the 'iid' values of the top-K predictions
+        top_K_iids = [p.iid for p in sorted_predictions[:top_K]]
+
+        # Filter the movies DataFrame based on the top-K iids
+        results = movies[movies['movie_id'].isin(top_K_iids)]
 
     # ==== End ====
 
-    # return the result
+    # Return the result
+    if len(results) > 0:
+        return results.to_dict('records')
+    return results
+
+# Modify this function
+def getLikedSimilarBy(user_likes):
+    results = []
+
+    # ==== Do some operations ====
+
+    # Check if there are any user_likes
+    if len(user_likes) > 0:
+        # Get the last item from the user_likes list and convert it to an integer
+        user_like_last = int(user_likes[-1])
+
+        # Convert the raw item id to the inner item id using algo.trainset
+        inner_id = algo.trainset.to_inner_iid(user_like_last)
+
+        # Get the k nearest neighbors of the inner_id
+        neighbors = algo.get_neighbors(inner_id, k=12)
+
+        # Convert the inner item ids of the neighbors back to raw item ids
+        neighbors_iid = [algo.trainset.to_raw_iid(x) for x in neighbors]
+
+        # Filter the movies DataFrame based on the neighbors' item ids
+        results = movies[movies['movie_id'].isin(neighbors_iid)]
+
+    # ==== End ====
+
+    # Return the result
     if len(results) > 0:
         return results.to_dict('records')
     return results
