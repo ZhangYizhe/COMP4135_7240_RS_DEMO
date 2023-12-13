@@ -55,6 +55,24 @@ def index():
                            )
 
 
+def getUserLikesBy(user_likes):
+    results = []
+
+    if len(user_likes) > 0:
+        mask = movies['movie_id'].isin([int(movie_id) for movie_id in user_likes])
+        results = movies.loc[mask]
+
+    original_orders = pd.DataFrame()
+    for _id in user_likes:
+        original_orders = pd.concat([results.loc[[int(_id) - 1]], original_orders])
+    results = original_orders
+
+    # return the result
+    if len(results) > 0:
+        return results.to_dict('records')
+    return results
+
+
 def getMoviesByGenres(user_genres):
     results = []
 
@@ -76,23 +94,6 @@ def getMoviesByGenres(user_genres):
         return results.to_dict('records')
     return results
 
-
-def getUserLikesBy(user_likes):
-    results = []
-
-    if len(user_likes) > 0:
-        mask = movies['movie_id'].isin([int(movie_id) for movie_id in user_likes])
-        results = movies.loc[mask]
-
-    original_orders = pd.DataFrame()
-    for id in user_likes:
-        original_orders = pd.concat([results.loc[[int(id) - 1]], original_orders])
-    results = original_orders
-
-    # return the result
-    if len(results) > 0:
-        return results.to_dict('records')
-    return results
 
 # Modify this function
 def getRecommendationBy(user_rates):
