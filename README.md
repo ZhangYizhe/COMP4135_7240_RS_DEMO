@@ -16,7 +16,7 @@ python3 -m venv .venv
 ## Install Python packages 
 
 ```
-pip install --upgrade pip setuptools wheel
+pip install --upgrade pip setuptools wheel pyquery
 pip install -r requirements.txt
 ```
 
