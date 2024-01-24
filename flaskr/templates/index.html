@@ -61,9 +61,10 @@
             {% if recommendations %}
             <section class="section pt-2 pb-0">
                 <div class="container">
-                    <p class="is-size-4 mb-3">
+                    <p class="is-size-4">
                         Recommended
                     </p>
+                    <p class="mb-3">{{ recommendations_message }}</p>
 
                     <div class="columns is-mobile is-multiline">
                         {% for movie in recommendations %}
@@ -102,20 +103,16 @@
             {% if likes_similars %}
             <section class="section pb-0">
                 <div class="container">
-                    <p class="is-size-4 mb-3">
+                    <p class="is-size-4">
                         Liked with Similar Items
                     </p>
+                    <p class="mb-3">{{ likes_similar_message }}</p>
 
                     <div class="columns is-mobile is-multiline">
                         {% for movie in likes_similars %}
                         <div class="column is-2-fullhd is-2-desktop is-2-tablet is-6-mobile">
                             <div class="card">
                                 <div class="card-image">
-                                    <figure class="image is-3by4">
-                                        <img src="{{ movie['cover_url'] }}"
-                                             onerror="this.src='https://placehold.co/480x640?text=No+Cover';"
-                                             alt="">
-                                    </figure>
                                 </div>
                                 <div class="card-content p-2">
                                     <div class="media">

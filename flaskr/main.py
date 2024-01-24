@@ -17,6 +17,10 @@ algo = KNNBasic(sim_options={'name': 'pearson', 'user_based': False})
 
 @bp.route('/', methods=('GET', 'POST'))
 def index():
+
+    # Default Genres List
+    default_genres = genres.to_dict('records')[:5]
+
     # User Genres
     user_genres = request.cookies.get('user_genres')
     if user_genres:
@@ -39,18 +43,20 @@ def index():
         user_likes = []
 
     default_genres_movies = getMoviesByGenres(user_genres)
-    recommendations_movies = getRecommendationBy(user_rates)
-    likes_similar_movies = getLikedSimilarBy(user_likes)
+    recommendations_movies, recommendations_message = getRecommendationBy(user_rates)
+    likes_similar_movies, likes_similar_message = getLikedSimilarBy(user_likes)
     likes_movies = getUserLikesBy(user_likes)
 
     return render_template('index.html',
-                           genres=genres.to_dict('records'),
+                           genres=default_genres,
                            user_genres=user_genres,
                            user_rates=user_rates,
                            user_likes=user_likes,
                            default_genres_movies=default_genres_movies,
                            recommendations=recommendations_movies,
+                           recommendations_message=recommendations_message,
                            likes_similars=likes_similar_movies,
+                           likes_similar_message=likes_similar_message,
                            likes=likes_movies,
                            )
 
@@ -136,12 +142,13 @@ def getRecommendationBy(user_rates):
         # Filter the movies DataFrame based on the top-K iids
         results = movies[movies['movie_id'].isin(top_K_iids)]
 
-    # ==== End ====
-
     # Return the result
     if len(results) > 0:
-        return results.to_dict('records')
-    return results
+        return results.to_dict('records'), "These movies are recommended based on your interested genres."
+    return results, "No recommendations."
+
+    # ==== End ====
+
 
 # Modify this function
 def getLikedSimilarBy(user_likes):
@@ -150,7 +157,7 @@ def getLikedSimilarBy(user_likes):
     # ==== Do some operations ====
 
     # Check if there are any user_likes
-    if len(user_likes) > 0:
+    if hasattr(algo, 'trainset') and len(user_likes) > 0:
         # Get the last item from the user_likes list and convert it to an integer
         user_like_last = int(user_likes[-1])
 
@@ -166,9 +173,9 @@ def getLikedSimilarBy(user_likes):
         # Filter the movies DataFrame based on the neighbors' item ids
         results = movies[movies['movie_id'].isin(neighbors_iid)]
 
-    # ==== End ====
-
     # Return the result
     if len(results) > 0:
-        return results.to_dict('records')
-    return results
+        return results.to_dict('records'), "The movies are similar to your liked movies."
+    return results, "No similar movies found."
+
+    # ==== End ====
