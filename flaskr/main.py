@@ -107,46 +107,12 @@ def getRecommendationBy(user_rates):
 
     # ==== Do some operations ====
 
-    # Convert user_rates to rates from the user
-    user_rates = ratesFromUser(user_rates)
-
-    # Combine rates and user_rates into training_rates
-    training_rates = pd.concat([rates, user_rates])
-
-    # Check if there are any user_rates
-    if len(user_rates) > 0:
-        # Initialize a reader with rating scale from 1 to 5
-        reader = Reader(rating_scale=(1, 5))
-
-        # Load the training data from the training_rates DataFrame
-        training_data = Dataset.load_from_df(training_rates, reader=reader)
-
-        # Build a full training set from the training data
-        trainset = training_data.build_full_trainset()
-
-        # Fit the algorithm using the trainset
-        algo.fit(trainset)
-
-        # Generate predictions using the testset from the trainset (limited to the first 100)
-        predictions = algo.test(trainset.build_testset()[:100])
-
-        # Sort the predictions based on the 'est' values in descending order
-        sorted_predictions = sorted(predictions, key=lambda x: x.est, reverse=True)
-
-        # Specify the number of top-K predictions to retrieve
-        top_K = 12
-
-        # Extract the 'iid' values of the top-K predictions
-        top_K_iids = [p.iid for p in sorted_predictions[:top_K]]
-
-        # Filter the movies DataFrame based on the top-K iids
-        results = movies[movies['movie_id'].isin(top_K_iids)]
+    results = movies[:12]
 
     # Return the result
     if len(results) > 0:
         return results.to_dict('records'), "These movies are recommended based on your interested genres."
     return results, "No recommendations."
-
     # ==== End ====
 
 
