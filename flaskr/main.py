@@ -19,7 +19,7 @@ algo = KNNBasic(sim_options={'name': 'pearson', 'user_based': False})
 def index():
 
     # Default Genres List
-    default_genres = genres.to_dict('records')[:5]
+    default_genres = genres.to_dict('records')[:2]
 
     # User Genres
     user_genres = request.cookies.get('user_genres')
@@ -42,7 +42,7 @@ def index():
     else:
         user_likes = []
 
-    default_genres_movies = getMoviesByGenres(user_genres)
+    default_genres_movies = getMoviesByGenres(user_genres)[:1]
     recommendations_movies, recommendations_message = getRecommendationBy(user_rates)
     likes_similar_movies, likes_similar_message = getLikedSimilarBy(user_likes)
     likes_movies = getUserLikesBy(user_likes)
