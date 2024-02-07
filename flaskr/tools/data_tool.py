@@ -40,8 +40,8 @@ def getRates():
     df = pd.read_csv(path, delimiter="\t", names=["user_id", "movie_id", "rating", "timestamp"])
 
     df = df.drop(columns='timestamp')
-    df = df.rename(columns={'movie_id': 'itemID', 'user_id': 'userID'})
-    df = df[['itemID', 'userID', 'rating']]
+    df = df.rename(columns={'movie_id': 'movieId', 'user_id': 'userId'})
+    df = df[['userId', 'movieId', 'rating']]
 
     return df
 
@@ -54,13 +54,13 @@ def ratesFromUser(rates):
 
     for rate in rates:
         items = rate.split("|")
-        userID.append(items[0])
-        itemID.append(items[1])
-        rating.append(items[2])
+        userID.append(int(items[0]))
+        itemID.append(int(items[1]))
+        rating.append(int(items[2]))
 
     ratings_dict = {
-        "itemID": itemID,
-        "userID": userID,
+        "userId": userID,
+        "movieId": itemID,
         "rating": rating,
     }
 
