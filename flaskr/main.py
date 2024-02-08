@@ -7,6 +7,7 @@ from .tools.data_tool import *
 from surprise import Reader
 from surprise import KNNBasic
 from surprise import Dataset
+from sklearn.metrics.pairwise import cosine_similarity
 
 bp = Blueprint('main', __name__, url_prefix='/')
 
@@ -42,7 +43,7 @@ def index():
 
     default_genres_movies = getMoviesByGenres(user_genres)
     recommendations_movies, recommendations_message = getRecommendationBy(user_rates)
-    likes_similar_movies, likes_similar_message = getLikedSimilarBy(user_likes)
+    likes_similar_movies, likes_similar_message = getLikedSimilarBy([int(numeric_string) for numeric_string in user_likes])
     likes_movies = getUserLikesBy(user_likes)
 
     return render_template('index.html',
@@ -156,7 +157,15 @@ def getLikedSimilarBy(user_likes):
 
     # ==== Do some operations ====
     if len(user_likes) > 0:
-        results = movies[:12]
+
+        # Step 1: Representing items with one-hot vectors
+        item_rep_matrix, item_rep_vector, feature_list = item_representation_based_movie_genres(movies)
+
+        # Step 2: Building user profile
+        user_profile = build_user_profile(user_likes, item_rep_vector, feature_list)
+
+        # Step 3: Predicting user interest in items
+        results = generate_recommendation_results(user_profile, item_rep_matrix, item_rep_vector, 12)
 
     # Return the result
     if len(results) > 0:
@@ -164,3 +173,39 @@ def getLikedSimilarBy(user_likes):
     return results, "No similar movies found."
 
     # ==== End ====
+
+
+def item_representation_based_movie_genres(movies_df):
+    movies_with_genres = movies_df.copy(deep=True)
+
+    genre_list = movies_with_genres.columns[5:]
+    movies_genre_matrix = movies_with_genres[genre_list].to_numpy()
+    return movies_genre_matrix, movies_with_genres, genre_list
+
+
+def build_user_profile(movieIds, item_rep_vector, feature_list, normalized=True):
+
+    ## Calculate item representation matrix to represent user profiles
+    user_movie_rating_df = item_rep_vector[item_rep_vector['movie_id'].isin(movieIds)]
+    user_movie_df = user_movie_rating_df[feature_list].mean()
+    user_profile = user_movie_df.T
+
+    if normalized:
+        user_profile = user_profile / sum(user_profile.values)
+
+    return user_profile
+
+
+def generate_recommendation_results(user_profile,item_rep_matrix, movies_data, k=12):
+
+    u_v = user_profile.values
+    u_v_matrix = [u_v]
+
+    # Comput the cosine similarity
+    recommendation_table = cosine_similarity(u_v_matrix, item_rep_matrix)
+
+    recommendation_table_df = movies_data.copy(deep=True)
+    recommendation_table_df['similarity'] = recommendation_table[0]
+    rec_result = recommendation_table_df.sort_values(by=['similarity'], ascending=False)[:k]
+
+    return rec_result
