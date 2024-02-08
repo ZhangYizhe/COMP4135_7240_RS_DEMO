@@ -18,7 +18,7 @@ movies, genres, rates, users = loadData()
 def index():
 
     # Default Genres List
-    default_genres = genres.to_dict('records')
+    default_genres = genres.to_dict('records')[:2]
 
     # User Genres
     user_genres = request.cookies.get('user_genres')
@@ -41,7 +41,7 @@ def index():
     else:
         user_likes = []
 
-    default_genres_movies = getMoviesByGenres(user_genres)
+    default_genres_movies = getMoviesByGenres(user_genres)[:1]
     recommendations_movies, recommendations_message = getRecommendationBy(user_rates)
     likes_similar_movies, likes_similar_message = getLikedSimilarBy([int(numeric_string) for numeric_string in user_likes])
     likes_movies = getUserLikesBy(user_likes)
