@@ -1,4 +1,7 @@
+import csv
 import urllib.request as urllib2
+
+from flask import current_app
 from pyquery import PyQuery as pq
 import urllib.parse as urlParse
 import re
@@ -39,7 +42,7 @@ def get_movie_png(movie_name):
 #               Film-Noir | Horror | Musical | Mystery | Romance | Sci-Fi |
 #               Thriller | War | Western |
 def getOriginalItems():
-    file = open(f"{current_app.root_path}/static/ml-100k/u.item.new", encoding="ISO-8859-1")
-    data = list(csv.reader(file, delimiter="|"))
+    file = open(f"{current_app.root_path}/static/ml_data_lab2/movie_info.csv", encoding="ISO-8859-1")
+    data = list(csv.reader(file, delimiter=","))
     file.close()
     return data

@@ -1,26 +1,55 @@
 import os
 import pandas as pd
-from flask import current_app
 
 
 def loadData():
     return getMovies(), getGenre(), getRates(), getUsers()
 
 
-# movie id | movie title | release date | video release date |
-#               Cover URL | unknown | Action | Adventure | Animation |
-#               Children's | Comedy | Crime | Documentary | Drama | Fantasy |
-#               Film-Noir | Horror | Musical | Mystery | Romance | Sci-Fi |
-#               Thriller | War | Western |
+def changeData():
+    rootPath = os.path.abspath(os.getcwd())
+    path = f"{rootPath}/flaskr/static/ml_data_lab2/movie_info_new.csv"
+
+    file1 = open(path, 'r')
+    lines = file1.readlines()
+
+    final_lines = [lines[0]]
+
+    array = []
+    for line in lines[1:]:
+        array += line.split(",")
+
+        if "https" not in array[-2]:
+            continue
+
+        array_len = len(array)
+
+        sub = ','.join(array[3:(array_len - 2)]).replace('"', "").replace("\n", "")
+
+        new_line = ','.join(array[:3]) + ',"' + sub + '",' + ','.join(array[-2:])
+        final_lines.append(new_line)
+
+        array = []
+
+    for line in final_lines:
+        file = open(f"{rootPath}/flaskr/static/ml_data_lab2/movie_info_new_2.csv", "a")
+        file.write(line)
+        file.close()
+
+
+# movieId,title,year,overview,cover_url,genres
 def getMovies():
     rootPath = os.path.abspath(os.getcwd())
-    path = f"{rootPath}/flaskr/static/ml-100k/u.item"
-    df = pd.read_csv(path, delimiter="|", names=["movie_id", "movie_title", "release_date", "video_release_date",
-                                                 "cover_url", "unknown", "Action", "Adventure", "Animation",
-                                                 "Children's", "Comedy", "Crime", "Documentary", "Drama", "Fantasy",
-                                                 "Film-Noir", "Horror", "Musical", "Mystery", "Romance", "Sci-Fi",
-                                                 "Thriller", "War", "Western"])
-    df.set_index('movie_id')
+    path = f"{rootPath}/flaskr/static/ml_data_lab2/movie_info_new_2.csv"
+    print(path)
+    # df = pd.read_csv(path, delimiter=",", names=["movieId", "title", "year", "overview", "cover_url", "genres"])
+    df = pd.read_csv(path)
+    df.set_index('movieId')
+
+    df['genres'] = df.genres.str.split('|')
+
+    print(df.head())
+
     return df
 
 

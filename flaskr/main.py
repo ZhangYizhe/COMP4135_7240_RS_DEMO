@@ -11,6 +11,8 @@ from sklearn.metrics.pairwise import cosine_similarity
 
 bp = Blueprint('main', __name__, url_prefix='/')
 
+# changeData()
+
 movies, genres, rates, users = loadData()
 
 
