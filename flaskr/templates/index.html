@@ -80,7 +80,7 @@
                                 <div class="card-content p-2">
                                     <div class="media">
                                         <div class="media-content">
-                                            <p style="font-size: 0.8rem; font-weight: bold">{{ movie['movie_title']
+                                            <p style="font-size: 0.8rem; font-weight: bold">{{ movie['title']
                                                 }}</p>
                                             <p style="font-size: 0.8rem">{{ movie['release_date'] }}</p>
                                         </div>
@@ -88,8 +88,8 @@
                                 </div>
 
                                 <div class="card-footer p-2">
-                                    <button class="button is-small" @click="updateLike({{movie['movie_id']}})">
-                                        <span :class="['fa fa-heart', inLikes({{movie['movie_id']}}) ? 'checked': '']" > Like</span>
+                                    <button class="button is-small" @click="updateLike({{movie['movieId']}})">
+                                        <span :class="['fa fa-heart', inLikes({{movie['movieId']}}) ? 'checked': '']" > Like</span>
                                     </button>
                                 </div>
                             </div>
@@ -117,7 +117,7 @@
                                 <div class="card-content p-2">
                                     <div class="media">
                                         <div class="media-content">
-                                            <p style="font-size: 0.8rem; font-weight: bold">{{ movie['movie_title']
+                                            <p style="font-size: 0.8rem; font-weight: bold">{{ movie['title']
                                                 }}</p>
                                             <p style="font-size: 0.8rem">{{ movie['release_date'] }}</p>
                                         </div>
@@ -125,8 +125,8 @@
                                 </div>
 
                                 <div class="card-footer p-2">
-                                    <button class="button is-small" @click="updateLike({{movie['movie_id']}})">
-                                        <span :class="['fa fa-heart', inLikes({{movie['movie_id']}}) ? 'checked': '']" > Like</span>
+                                    <button class="button is-small" @click="updateLike({{movie['movieId']}})">
+                                        <span :class="['fa fa-heart', inLikes({{movie['movieId']}}) ? 'checked': '']" > Like</span>
                                     </button>
                                 </div>
                             </div>
@@ -158,7 +158,7 @@
                                 <div class="card-content p-2">
                                     <div class="media">
                                         <div class="media-content">
-                                            <p style="font-size: 0.8rem; font-weight: bold">{{ movie['movie_title']
+                                            <p style="font-size: 0.8rem; font-weight: bold">{{ movie['title']
                                                 }}</p>
                                             <p style="font-size: 0.8rem">{{ movie['release_date'] }}</p>
                                         </div>
@@ -166,8 +166,8 @@
                                 </div>
 
                                 <div class="card-footer p-2">
-                                    <button class="button is-small" @click="updateLike({{movie['movie_id']}})">
-                                        <span :class="['fa fa-heart', inLikes({{movie['movie_id']}}) ? 'checked': '']" > Like</span>
+                                    <button class="button is-small" @click="updateLike({{movie['movieId']}})">
+                                        <span :class="['fa fa-heart', inLikes({{movie['movieId']}}) ? 'checked': '']" > Like</span>
                                     </button>
                                 </div>
                             </div>
@@ -221,7 +221,7 @@
                                 <div class="card-content p-2">
                                     <div class="media">
                                         <div class="media-content">
-                                            <p style="font-size: 0.8rem; font-weight: bold">{{ movie['movie_title']
+                                            <p style="font-size: 0.8rem; font-weight: bold">{{ movie['title']
                                                 }}</p>
                                             <p style="font-size: 0.8rem">{{ movie['release_date'] }}</p>
                                         </div>
@@ -230,8 +230,8 @@
 
                                 <div class="card-footer p-2">
                                     <template v-for="rate in [1, 2, 3, 4, 5]">
-                                        <span :class="['fa fa-star px-1 star', getRate({{movie['movie_id']}})[1] >= rate ? 'checked': '']"
-                                              @click="updateRate({{movie['movie_id']}}, rate)"></span>
+                                        <span :class="['fa fa-star px-1 star', getRate({{movie['movieId']}})[1] >= rate ? 'checked': '']"
+                                              @click="updateRate({{movie['movieId']}}, rate)"></span>
                                     </template>
                                 </div>
                             </div>
@@ -321,10 +321,10 @@
             const showMovieRate = ref(false)
             const userRates = ref({{user_rates | tojson}}) // If this place shows error, please check the format: ref({{user_rates | tojson}})
 
-            function getRate(movie_id) {
+            function getRate(movieId) {
                 for (let index in userRates.value) {
                     let record = userRates.value[index].split('|')
-                    if (parseInt(record[1]) === movie_id) {
+                    if (parseInt(record[1]) === movieId) {
                         return [index, record[2]]
                     }
                 }
@@ -332,10 +332,10 @@
                 return [-1, -1]
             }
 
-            function updateRate(movie_id, rate) {
-                let record = '944' + '|' + movie_id + '|' + rate + '|' + '0' //  total 943 users, so the new user id is 944
+            function updateRate(movieId, rate) {
+                let record = '611' + '|' + movieId + '|' + rate + '|' + '0' //  total 610 users, so the new user id is 944
 
-                const index = getRate(movie_id)[0];
+                const index = getRate(movieId)[0];
                 if (index > -1) {
                     userRates.value[index] = record;
                 } else {
@@ -347,21 +347,21 @@
             // ==== Movie Like Operation ====
             const userLikes = ref({{user_likes | tojson}}) // If this place shows error, please check the format: ref({{user_likes | tojson}})
 
-            function updateLike(_movie_id) {
-                let movie_id = _movie_id.toString()
-                const index = userLikes.value.indexOf(movie_id);
+            function updateLike(_movieId) {
+                let movieId = _movieId.toString()
+                const index = userLikes.value.indexOf(movieId);
                 if (index > -1) {
                     userLikes.value.splice(index, 1);
                 } else {
-                    userLikes.value.push(movie_id);
+                    userLikes.value.push(movieId);
                 }
 
                 document.cookie = "user_likes=" + userLikes.value;
 
                 reloadPage();
             }
-            function inLikes(movie_id) {
-                return userLikes.value.includes(movie_id.toString())
+            function inLikes(movieId) {
+                return userLikes.value.includes(movieId.toString())
             }
 
 

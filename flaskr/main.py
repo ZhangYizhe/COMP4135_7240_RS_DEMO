@@ -11,9 +11,7 @@ from sklearn.metrics.pairwise import cosine_similarity
 
 bp = Blueprint('main', __name__, url_prefix='/')
 
-# changeData()
-
-movies, genres, rates, users = loadData()
+movies, genres, rates = loadData()
 
 
 @bp.route('/', methods=('GET', 'POST'))
@@ -66,12 +64,16 @@ def getUserLikesBy(user_likes):
     results = []
 
     if len(user_likes) > 0:
-        mask = movies['movie_id'].isin([int(movie_id) for movie_id in user_likes])
+        mask = movies['movieId'].isin([int(movieId) for movieId in user_likes])
         results = movies.loc[mask]
 
         original_orders = pd.DataFrame()
         for _id in user_likes:
-            original_orders = pd.concat([results.loc[[int(_id) - 1]], original_orders])
+            movie = results.loc[results['movieId'] == int(_id)]
+            if len(original_orders) == 0:
+                original_orders = movie
+            else:
+                original_orders = pd.concat([movie, original_orders])
         results = original_orders
 
     # return the result
@@ -131,7 +133,7 @@ def getRecommendationBy(user_rates):
         algo.fit(trainset)
 
         # Convert the raw user id to the inner user id using algo.trainset
-        inner_id = trainset.to_inner_uid(944)
+        inner_id = trainset.to_inner_uid(611)
 
         # Get the nearest neighbors of the inner_id
         neighbors = algo.get_neighbors(inner_id, k=1)
@@ -144,7 +146,7 @@ def getRecommendationBy(user_rates):
         moviesIds = results_movies[results_movies['rating'] > 2.5]['movieId']
 
         # Convert the movie ids to details.
-        results = movies[movies['movie_id'].isin(moviesIds)][:12]
+        results = movies[movies['movieId'].isin(moviesIds)][:12]
 
     # Return the result
     if len(results) > 0:
@@ -188,7 +190,7 @@ def item_representation_based_movie_genres(movies_df):
 def build_user_profile(movieIds, item_rep_vector, feature_list, normalized=True):
 
     ## Calculate item representation matrix to represent user profiles
-    user_movie_rating_df = item_rep_vector[item_rep_vector['movie_id'].isin(movieIds)]
+    user_movie_rating_df = item_rep_vector[item_rep_vector['movieId'].isin(movieIds)]
     user_movie_df = user_movie_rating_df[feature_list].mean()
     user_profile = user_movie_df.T
 
