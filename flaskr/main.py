@@ -254,15 +254,11 @@ def get_wordnet_pos(tag):
 def preprocessing(text):
     # lower case
     text = text.lower()
-
     # remove punctuation
     text_rp = "".join([char for char in text if char not in string.punctuation])
-
     # word tokenization
     tokens = word_tokenize(text_rp)
-
     # remove stopwords
-
     tokens_without_stopwords = [word for word in tokens if word not in stopword]
 
     # lemm
