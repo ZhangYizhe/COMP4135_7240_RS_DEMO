@@ -162,6 +162,7 @@ def getLikedSimilarBy(user_likes):
     # ==== Do some operations ====
     if len(user_likes) > 0:
 
+        # One-hot By Genres
         # Step 1: Representing items with one-hot vectors
         item_rep_matrix, item_rep_vector, feature_list = item_representation_based_movie_genres(movies)
 
@@ -170,6 +171,14 @@ def getLikedSimilarBy(user_likes):
 
         # Step 3: Predicting user interest in items
         results = generate_recommendation_results(user_profile, item_rep_matrix, item_rep_vector, 12)
+
+        # TF-IDF By Overview
+        # Step 1: Representing TF-IDF Vectors
+        movie_TF_IDF_vector, tfidf_feature_list = build_tfidf_vectors()
+        # Step 2: Building user profile
+        ifidf_user_profile = build_tfidf_user_profile(user_likes, movie_TF_IDF_vector, tfidf_feature_list)
+        # Step 3: Predicting user interest in items
+        results = generate_tf_idf_recommendation_results(ifidf_user_profile, movie_TF_IDF_vector, tfidf_feature_list, 12)
 
     # Return the result
     if len(results) > 0:
@@ -209,6 +218,113 @@ def generate_recommendation_results(user_profile,item_rep_matrix, movies_data, k
     recommendation_table = cosine_similarity(u_v_matrix, item_rep_matrix)
 
     recommendation_table_df = movies_data.copy(deep=True)
+    recommendation_table_df['similarity'] = recommendation_table[0]
+    rec_result = recommendation_table_df.sort_values(by=['similarity'], ascending=False)[:k]
+
+    return rec_result
+
+# TF-IDF by Overview
+import nltk
+import string
+from nltk.tokenize import word_tokenize
+from nltk.corpus import stopwords
+from nltk.corpus import wordnet
+from nltk.stem.wordnet import WordNetLemmatizer
+
+nltk.download('stopwords')
+nltk.download('punkt')
+nltk.download('averaged_perceptron_tagger')
+nltk.download('wordnet')
+
+stopword = stopwords.words('english')
+
+def get_wordnet_pos(tag):
+    if tag.startswith('J'):
+        return wordnet.ADJ
+    elif tag.startswith('V'):
+        return wordnet.VERB
+    elif tag.startswith('N'):
+        return wordnet.NOUN
+    elif tag.startswith('R'):
+        return wordnet.ADV
+    else:
+        return ''
+
+
+def preprocessing(text):
+    # lower case
+    text = text.lower()
+
+    # remove punctuation
+    text_rp = "".join([char for char in text if char not in string.punctuation])
+
+    # word tokenization
+    tokens = word_tokenize(text_rp)
+
+    # remove stopwords
+
+    tokens_without_stopwords = [word for word in tokens if word not in stopword]
+
+    # lemm
+    tagged_tokens = nltk.pos_tag(tokens_without_stopwords)
+    # print(tagged_tokens)
+    tokens_processed = []
+
+    lemmatizer = WordNetLemmatizer()
+    for word, tag in tagged_tokens:
+        word_net_tag = get_wordnet_pos(tag)
+        if word_net_tag != '':
+            tokens_processed.append(lemmatizer.lemmatize(word, word_net_tag))
+        else:
+            tokens_processed.append(word)
+    text_processed = ' '.join(tokens_processed)
+
+    return text_processed
+
+
+def build_tfidf_vectors():
+    movies_vectors = movies.copy(deep=True)
+    movies_vectors['overview'] = movies_vectors['overview'].fillna('')
+
+    # Import TfIdfVectorizer from scikit-learn
+    from sklearn.feature_extraction.text import TfidfVectorizer
+
+    # Define a TF-IDF Vectorizer Object.
+    tfidf = TfidfVectorizer(
+        preprocessor=preprocessing,
+        ngram_range=(1, 1),
+        max_features=20)
+
+    # Construct the required TF-IDF matrix by fitting and transforming the data
+    tfidf_matrix = tfidf.fit_transform(movies_vectors['overview'])
+
+    movie_TF_IDF_vector = pd.DataFrame(tfidf_matrix.toarray(), columns=tfidf.get_feature_names_out())
+    movie_TF_IDF_vector['movieId'] = movies['movieId']
+    return movie_TF_IDF_vector, tfidf.get_feature_names_out()[:20]
+
+
+def build_tfidf_user_profile(user_likes, movie_TF_IDF_vector, tfidf_feature_list, normalized=True):
+    user_movie = movie_TF_IDF_vector[movie_TF_IDF_vector['movieId'].isin(user_likes)]
+
+    user_movie_df = user_movie[tfidf_feature_list].mean()
+
+    user_profile = user_movie_df.T
+
+    if normalized:
+        user_profile = user_profile / sum(user_profile.values)
+
+    return user_profile
+
+
+def generate_tf_idf_recommendation_results(user_profile, movie_TF_IDF_vector, tfidf_feature_list, k=12):
+
+    # Compute the cosine similarity
+    u_v = user_profile
+    u_v_matrix = [u_v]
+
+    recommendation_table = cosine_similarity(u_v_matrix, movie_TF_IDF_vector[tfidf_feature_list])
+
+    recommendation_table_df = movies.copy(deep=True)
     recommendation_table_df['similarity'] = recommendation_table[0]
     rec_result = recommendation_table_df.sort_values(by=['similarity'], ascending=False)[:k]
 
